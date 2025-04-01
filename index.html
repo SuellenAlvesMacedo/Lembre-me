@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu App de Lembretes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            text-align: center;
+            transition: background-color 0.5s, color 0.5s;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px 0;
+            transition: background-color 0.5s;
+        }
+        h1 {
+            margin: 0;
+        }
+        .container {
+            margin: 30px auto;
+            width: 80%;
+            max-width: 500px;
+        }
+        .reminder-list {
+            margin-top: 20px;
+            list-style-type: none;
+            padding: 0;
+        }
+        .reminder-item {
+            background-color: #fff;
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .reminder-time {
+            color: #888;
+            font-size: 0.9em;
+        }
+        .add-button {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 30px;
+            cursor: pointer;
+        }
+        .add-button:hover {
+            background-color: #45a049;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 400px;
+        }
+        .modal input, .modal select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .gear-icon {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 40px;
+            cursor: pointer;
+        }
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .settings-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 500px;
+            text-align: left;
+        }
+        .settings-content label {
+            margin-top: 10px;
+        }
+        .settings-content .color-picker {
+            display: flex;
+            flex-direction: column;
+        }
+        .settings-content input[type="file"] {
+            margin-top: 10px;
+            font-size: 18px; /* Aumentando o tamanho do botão de arquivo */
+        }
+        .close-settings-btn {
+            background-color: #f44336;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        .close-settings-btn:hover {
+            background-color: #e53935;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>App de Lembretes</h1>
+    </header>
+
+    <div class="container">
+        <h2>Seus Lembretes</h2>
+        <ul class="reminder-list" id="reminderList"></ul>
+    </div>
+
+    <!-- Botão para adicionar lembrete -->
+    <button class="add-button" onclick="openModal()">+</button>
+
+    <!-- Modal para adicionar lembrete -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h3>Adicionar Lembrete</h3>
+            <input type="text" id="reminderInput" placeholder="Digite seu lembrete">
+            <input type="time" id="reminderTime">
+            <button onclick="addReminder()">Adicionar</button>
+            <button onclick="closeModal()">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Ícone de engrenagem para configurações -->
+    <div class="gear-icon" onclick="openSettings()">⚙️</div>
+
+    <!-- Modal de configurações -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-content">
+            <h3>Configurações</h3>
+
+            <div class="color-picker">
+                <label for="colorPicker">Escolha a cor de fundo:</label>
+                <input type="color" id="colorPicker" onchange="changeBackgroundColor(event)">
+
+                <label for="buttonColorPicker">Escolha a cor do botão de adicionar:</label>
+                <input type="color" id="buttonColorPicker" onchange="changeButtonColor(event)">
+
+                <label for="textColorPicker">Escolha a cor do texto:</label>
+                <input type="color" id="textColorPicker" onchange="changeTextColor(event)">
+            </div>
+
+            <label for="backgroundPicker">Escolha um papel de parede:</label>
+            <input type="file" id="backgroundPicker" accept="image/*" onchange="changeBackgroundImage(event)">
+
+            <button class="close-settings-btn" onclick="closeSettings()">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        let currentEditingItem = null;
+
+        // Abrir o modal para adicionar ou editar lembrete
+        function openModal(item = null) {
+            currentEditingItem = item;
+            if (item) {
+                document.getElementById('reminderInput').value = item.querySelector('.reminder-text').innerText;
+                document.getElementById('reminderTime').value = item.querySelector('.reminder-time').dataset.time;
+            }
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        // Fechar o modal
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // Abrir o modal de configurações
+        function openSettings() {
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        // Fechar o modal de configurações
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        // Função para adicionar ou editar um lembrete
+        function addReminder() {
+            const reminderInput = document.getElementById('reminderInput');
+            const reminderText = reminderInput.value.trim();
+            const reminderTime = document.getElementById('reminderTime').value;
+
+            if (reminderText !== '' && reminderTime !== '') {
+                const reminderList = document.getElementById('reminderList');
+                const li = document.createElement('li');
+                li.classList.add('reminder-item');
+
+                // Exibir o lembrete e a hora
+                const timeFormatted = formatTime(reminderTime);
+                li.innerHTML = `<span class="reminder-text">${reminderText}</span> <span class="reminder-time" data-time="${reminderTime}">${timeFormatted}</span> <button onclick="deleteReminder(this)">❌</button> <button onclick="openModalForEdit(this)">✏️</button>`;
+
+                // Editar ou adicionar o lembrete
+                if (currentEditingItem) {
+                    currentEditingItem.replaceWith(li);
+                    currentEditingItem = null;
+                } else {
+                    reminderList.appendChild(li);
+                }
+
+                // Fechar o modal
+                closeModal();
+
+                // Configurar a notificação para o horário
+                setReminderNotification(reminderTime, reminderText);
+            } else {
+                alert('Por favor, preencha todos os campos.');
+            }
+
+            // Limpar o campo de entrada
+            reminderInput.value = '';
+            document.getElementById('reminderTime').value = '';
+        }
+
+        // Função para editar um lembrete
+        function openModalForEdit(button) {
+            const item = button.parentElement;
+            openModal(item);
+        }
+
+        // Função para excluir um lembrete com confirmação
+        function deleteReminder(button) {
+            const li = button.parentElement;
+
+            // Confirmar a exclusão
+            const confirmation = confirm('Tem certeza de que deseja excluir este lembrete?');
+            if (confirmation) {
+                li.remove();  // Exclui o lembrete se o usuário confirmar
+            }
+        }
+
+        // Função para formatar o horário no formato HH:MM
+        function formatTime(time) {
+            const [hours, minutes] = time.split(':');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const hour = hours % 12 || 12;
+            return `${hour}:${minutes} ${ampm}`;
+        }
+
+        // Função para configurar a notificação no horário selecionado
+        function setReminderNotification(time, reminderText) {
+            const [hours, minutes] = time.split(':');
+            const now = new Date();
+            const targetTime = new Date(now);
+            targetTime.setHours(hours);
+            targetTime.setMinutes(minutes);
+            targetTime.setSeconds(0);
+
+            // Verificar se a hora já passou, se sim, agendar para o próximo dia
+            if (targetTime < now) {
+                targetTime.setDate(now.getDate() + 1);
+            }
+
+            const timeDifference = targetTime.getTime() - now.getTime();
+
+            // Agendar a notificação para o horário especificado
+            setTimeout(() => {
+                notifyUser(reminderText);
+            }, timeDifference);
+        }
+
+        // Função para enviar a notificação
+        function notifyUser(reminderText) {
+            if (Notification.permission === 'granted') {
+                new Notification('Lembrete', {
+                    body: reminderText,
+                    icon: 'https://www.iconfinder.com/data/icons/ios-13/100/bell-512.png',
+                });
+            } else {
+                alert('Você precisa permitir notificações no navegador.');
+            }
+        }
+
+        // Pedir permissão para notificações no início
+        if (Notification.permission !== 'granted') {
+            Notification.requestPermission();
+        }
+
+        // Função para alterar a cor de fundo
+        function changeBackgroundColor(event) {
+            document.body.style.backgroundColor = event.target.value;
+        }
+
+        // Função para alterar a cor do botão
+        function changeButtonColor(event) {
+            document.querySelector('.add-button').style.backgroundColor = event.target.value;
+        }
+
+        // Função para alterar o papel de parede
+        function changeBackgroundImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.body.style.backgroundImage = `url(${e.target.result})`;
+                    document.body.style.backgroundSize = 'cover';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Função para alterar a cor do texto
+        function changeTextColor(event) {
+            document.body.style.color = event.target.value;
+        }
+    </script>
+
+</body>
+</html>
